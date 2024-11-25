@@ -1,0 +1,143 @@
+# PersistentVolume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: h2-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany  # Ensure correct access mode
+  hostPath:
+    path: /data/h2  # Local path on the host to store the database file
+---
+# PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: h2-pvc
+spec:
+  accessModes:
+    - ReadWriteMany  # Ensure it matches the PV's access mode
+  resources:
+    requests:
+      storage: 1Gi
+---
+# H2 Server Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: h2-server
+  labels:
+    app: h2-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: h2-server
+  template:
+    metadata:
+      labels:
+        app: h2-server
+    spec:
+      containers:
+        - name: h2-server
+          image: ditheesh/h2:latest
+          ports:
+            - containerPort: 9092  # H2 TCP Port
+            - containerPort: 8082  # H2 Web Console Port
+          volumeMounts:
+            - name: h2-data
+              mountPath: /data  # Mount the PVC inside the container
+          env:
+            - name: H2_OPTIONS
+              value: "-tcp -tcpAllowOthers -web -webAllowOthers"
+      volumes:
+        - name: h2-data
+          persistentVolumeClaim:
+            claimName: h2-pvc
+---
+# H2 Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: h2-service
+spec:
+  selector:
+    app: h2-server
+  ports:
+    - name: tcp-port
+      protocol: TCP
+      port: 9092
+      targetPort: 9092
+    - name: web-console
+      protocol: TCP
+      port: 8082
+      targetPort: 8082
+---
+# Spring Boot Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-imgur-service
+  labels:
+    app: ms-imgur-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ms-imgur-service
+  template:
+    metadata:
+      labels:
+        app: ms-imgur-service
+    spec:
+      containers:
+        - name: ms-imgur-service
+          image: ms-imgur-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9090
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:h2:tcp://h2-service:9092/~/imgurData;AUTO_SERVER=TRUE
+            - name: SPRING_DATASOURCE_USERNAME
+              value: sa
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: password
+---
+# Spring Boot Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-service
+spec:
+  selector:
+    app: ms-imgur-service
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+  type: LoadBalancer
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ms-imgur-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ms-imgur-service
+  minReplicas: 3
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
