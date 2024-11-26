@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  h2-server:
+    image: ditheesh/h2:latest
+    container_name: h2-server
+    ports:
+      - "9092:9092"
+      - "8082:8082"  # H2 console
+    environment:
+      H2_OPTIONS: '-tcp -tcpAllowOthers -web -webAllowOthers'
+    volumes:
+      - h2-data:/data  # Persist H2 database
+
+  springboot-app:
+    image: ms-imgur-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:h2:tcp://h2-server:9092/~/imgurData;AUTO_SERVER=TRUE
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: password
+    depends_on:
+      - h2-server
+
+volumes:
+  h2-data:

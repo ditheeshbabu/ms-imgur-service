@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: ms-imgur-service
+
+  spring:
+    datasource:
+      hikari:
+        maximumPoolSize: 200          # Adjust based on database and system capacity
+        minimumIdle: 20               # Keep a few idle connections ready for bursts
+        idleTimeout: 10000            # Close idle connections after 10 seconds
+        maxLifetime: 3600000          # Close connections after 60 minutes
+        connectionTimeout: 2000       # Timeout for acquiring a connection (in ms)
+        validationTimeout: 1000       # Timeout for connection validation (in ms)
+        leakDetectionThreshold: 3000  # Log connections not closed within 3 seconds
+      url: jdbc:h2:tcp://localhost:9092/~/imgurData
+      driverClassName: org.h2.Driver
+      username: sa
+      password: password
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+
+  cache:
+    type: ehcache
+
+server:
+  port: 9090 #change if needed
+
+# Imgur Configuration (Move secrets to github env variables)
+imgur:
+  clientId: 7d0799b7d824ac9
+  clientSecret: 08a9758cfb5da5f566d1ba21db53a5d9d04bc15c
+  client:
+    access_token: 6681de679763a267ebac4f724cfdc74660bf5414
+    authorizeUrl: https://api.imgur.com/oauth2/authorize
+    accessTokenUrl: https://api.imgur.com/oauth2/token
+  uploadUrl: https://api.imgur.com/3/image
+  viewUrl: https://api.imgur.com/3/image
+  deleteUrl: https://api.imgur.com/3/image
+  callbackUrl: https://localhost:8080/callback
+
+# JWT Configuration (move to github environment variables)
+jwt:
+  secret: 1601edebabc8dfc7eb2b60df96cc9b12e2aa80529e5a436216bd82b398f08447
+  # expiration: 86400000  # Uncomment if you want expiration in milliseconds
+
+# Logging Configuration
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet: DEBUG
+
+springdoc:
+  swagger-ui:
+    operations-sorter: method
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs

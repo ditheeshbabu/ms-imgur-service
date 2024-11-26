@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: ms-imgur-service
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+
+
+server:
+  port: 0  # Random port for testing to avoid conflicts
+
+# Imgur Configuration
+imgur:
+  clientId: test-client-id
+  clientSecret: test-client-secret
+  client:
+    access_token: test-access-token
+    authorizeUrl: https://api.imgur.com/oauth2/authorize
+    accessTokenUrl: https://api.imgur.com/oauth2/token
+  uploadUrl: https://test-api.imgur.com/3/image
+  viewUrl: https://test-api.imgur.com/3/image
+  deleteUrl: https://test-api.imgur.com/3/image
+  callbackUrl: https://localhost:9090/callback  # Adjust if needed
+
+# JWT Configuration
+jwt:
+  secret: test-secret-key
+  expiration: 3600000  # Example: 1 hour in milliseconds for testing
+
+# Logging Configuration
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet: DEBUG
+
+# Springdoc Swagger Configuration
+# Uncomment and configure if needed
+# springdoc:
+#   swagger-ui:
+#     path: /
+#     operations-sorter: method
+#     display-request-duration: true
+#   api-docs:
+#     path: /v3/api-docs
