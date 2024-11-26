@@ -1,0 +1,295 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:9090
+  description: Generated server url
+tags:
+- name: User Management
+  description: "APIs for managing user registration, login, and information retrieval"
+- name: Image Management
+  description: "APIs for managing image uploads, deletion, and retrieval"
+paths:
+  /users/{username}/images:
+    put:
+      tags:
+      - User Management
+      summary: Associate Images with User
+      description: Associates a list of image IDs with the specified user's profile.
+      operationId: associateImagesWithUser
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        "200":
+          description: Images associated successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+        "404":
+          description: User not found
+          content:
+            '*/*':
+              schema:
+                type: string
+  /users:
+    post:
+      tags:
+      - User Management
+      summary: Register User
+      description: Registers a new user and returns the created user's details.
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRequest"
+        required: true
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Invalid input data
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+  /users/login:
+    post:
+      tags:
+      - User Management
+      summary: Authenticate User
+      description: Authenticates a user with their credentials and returns a JWT token.
+      operationId: authenticateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthenticationRequest"
+        required: true
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/JwtResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/JwtResponse"
+  /images:
+    post:
+      tags:
+      - Image Management
+      summary: Upload Image
+      description: Uploads an image and associates it with the authenticated user.
+      operationId: uploadImage
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: The image file to upload
+        content:
+          multipart/form-data:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "201":
+          description: Image uploaded successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ImageResponse"
+        "400":
+          description: Invalid file or token
+          content:
+            '*/*':
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ImageResponse"
+  /users/{username}:
+    get:
+      tags:
+      - User Management
+      summary: Get User by Username
+      description: Retrieves basic information of a user by their username.
+      operationId: getUserByUsername
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: User found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "404":
+          description: User not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+  /images/user/{username}:
+    get:
+      tags:
+      - Image Management
+      summary: Get User Images
+      description: Retrieves all images for the authenticated user.
+      operationId: getImagesForUser
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Images retrieved successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+        "403":
+          description: Access denied
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImageResponse"
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImageResponse"
+  /images/{imageId}:
+    delete:
+      tags:
+      - Image Management
+      summary: Delete Image
+      description: Deletes an image by its ID for the authenticated user.
+      operationId: deleteImage
+      parameters:
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Image deleted successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+        "403":
+          description: Access denied
+          content:
+            '*/*':
+              schema:
+                type: string
+        "404":
+          description: Image not found
+          content:
+            '*/*':
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                type: string
+components:
+  schemas:
+    UserResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+    UserRequest:
+      required:
+      - email
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          maxLength: 20
+          minLength: 3
+          type: string
+        password:
+          maxLength: 2147483647
+          minLength: 6
+          type: string
+        email:
+          type: string
+    JwtResponse:
+      type: object
+      properties:
+        jwt:
+          type: string
+    AuthenticationRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    ImageResponse:
+      type: object
+      properties:
+        imageId:
+          type: string
+        imageUrl:
+          type: string
