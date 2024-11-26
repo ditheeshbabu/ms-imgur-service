@@ -44,7 +44,6 @@ public class ImageEntity {
      * Establishes a many-to-one relationship with the User entity.
      */
 
-    //TODO check if manytoone is needed here
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @NotNull(message = "User association cannot be null")
