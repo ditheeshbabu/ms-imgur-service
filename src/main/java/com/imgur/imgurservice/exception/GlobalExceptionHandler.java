@@ -26,66 +26,70 @@ public class GlobalExceptionHandler {
      * Handles exceptions when a user attempts to register but already exists.
      */
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<String> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        logger.warn("UserAlreadyExistsException: {}", ex.getMessage());
-        return ResponseEntity.badRequest().body(ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, "User already exists");
     }
 
     /**
      * Handles exceptions when a username is not found in the system.
      */
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<String> handleUsernameNotFound(UsernameNotFoundException ex) {
-        logger.warn("UsernameNotFoundException: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND, "User not found");
     }
 
     /**
      * Handles exceptions when access to a resource is denied.
      */
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException ex) {
-        logger.error("AccessDeniedException: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED, "Access denied");
     }
 
     /**
      * Handles exceptions when an image resource is not found.
      */
     @ExceptionHandler(ImageNotFoundException.class)
-    public ResponseEntity<String> handleImageNotFoundException(ImageNotFoundException ex) {
-        logger.warn("ImageNotFoundException: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleImageNotFoundException(ImageNotFoundException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND, "Image not found");
     }
 
     /**
      * Handles validation errors for request bodies.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        logger.warn("Validation error: {}", ex.getMessage());
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("timestamp", LocalDateTime.now());
-        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
-        errorResponse.put("error", "Validation Failed");
-
-        // Map field errors to their messages
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> validationErrors = new HashMap<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             validationErrors.put(error.getField(), error.getDefaultMessage());
         }
-        errorResponse.put("errors", validationErrors);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        String errorMessage = "Validation failed: " + validationErrors.toString();
+        return buildErrorResponse(errorMessage, HttpStatus.BAD_REQUEST, "Validation error");
     }
 
     /**
      * Handles uncaught runtime exceptions.
      */
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
         logger.error("Unhandled RuntimeException: {}", ex.getMessage(), ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+        return buildErrorResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, "Unhandled runtime exception");
+    }
+
+    /**
+     * Builds a standardized error response.
+     *
+     * @param message the error message
+     * @param status  the HTTP status
+     * @param error   the error type
+     * @return a ResponseEntity containing the ErrorResponse
+     */
+    private ResponseEntity<ErrorResponse> buildErrorResponse(String message, HttpStatus status, String error) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(LocalDateTime.now());
+        errorResponse.setStatus(status.value());
+        errorResponse.setError(error);
+        errorResponse.setMessage(message);
+        return new ResponseEntity<>(errorResponse, status);
     }
 }
