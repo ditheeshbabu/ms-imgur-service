@@ -1,5 +1,6 @@
 package com.imgur.imgurservice.controller;
 
+import com.imgur.imgurservice.exception.ErrorResponse;
 import com.imgur.imgurservice.exception.InvalidImageException;
 import com.imgur.imgurservice.model.ImageResponse;
 import com.imgur.imgurservice.service.ImageServiceImpl;
@@ -7,7 +8,6 @@ import com.imgur.imgurservice.util.JwtTokenManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -40,22 +40,19 @@ public class ImageController {
      *
      * @param file        the image file to upload
      * @param accessToken the JWT token for authentication
-     * @return a success message
+     * @return the uploaded image's details
      */
     @PostMapping
     @Operation(
             summary = "Upload Image",
             description = "Uploads an image and associates it with the authenticated user.",
-            requestBody = @RequestBody(
-                    description = "The image file to upload",
-                    content = @Content(mediaType = "multipart/form-data", schema = @Schema(type = "string", format = "binary"))
-            ),
             responses = {
                     @ApiResponse(responseCode = "201", description = "Image uploaded successfully",
                             content = @Content(schema = @Schema(implementation = ImageResponse.class))),
                     @ApiResponse(responseCode = "400", description = "Invalid file or token",
-                            content = @Content(schema = @Schema(implementation = String.class))),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<ImageResponse> uploadImage(
@@ -80,7 +77,7 @@ public class ImageController {
      *
      * @param imageId     the ID of the image to delete
      * @param accessToken the JWT token for authentication
-     * @return a success or error message
+     * @return a success message
      */
     @DeleteMapping("/{imageId}")
     @Operation(
@@ -88,9 +85,12 @@ public class ImageController {
             description = "Deletes an image by its ID for the authenticated user.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Image deleted successfully"),
-                    @ApiResponse(responseCode = "403", description = "Access denied"),
-                    @ApiResponse(responseCode = "404", description = "Image not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "403", description = "Access denied",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "Image not found",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<String> deleteImage(
@@ -119,8 +119,10 @@ public class ImageController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Images retrieved successfully",
                             content = @Content(schema = @Schema(implementation = List.class))),
-                    @ApiResponse(responseCode = "403", description = "Access denied"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "403", description = "Access denied",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<List<ImageResponse>> getImagesForUser(
@@ -129,7 +131,7 @@ public class ImageController {
         String authenticatedUsername = getUsernameFromToken(accessToken);
         if (!authenticatedUsername.equals(username)) {
             log.error("Access denied for user: {} to fetch images of: {}", authenticatedUsername, username);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+            throw new IllegalStateException("Access denied.");
         }
 
         List<ImageResponse> userImages = imgService.getImagesByUsername(username);
@@ -142,7 +144,7 @@ public class ImageController {
      * Extracts the username from a valid JWT token.
      *
      * @param accessToken the JWT token
-     * @return the extractedå username
+     * @return the extracted username
      */
     private String getUsernameFromToken(String accessToken) {
         if (accessToken.startsWith("Bearer ")) {

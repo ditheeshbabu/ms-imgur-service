@@ -1,5 +1,6 @@
 package com.imgur.imgurservice.controller;
 
+import com.imgur.imgurservice.exception.ErrorResponse;
 import com.imgur.imgurservice.model.Authentication.AuthenticationRequest;
 import com.imgur.imgurservice.model.Authentication.JwtResponse;
 import com.imgur.imgurservice.model.UserRequest;
@@ -47,7 +48,8 @@ public class UserController {
             responses = {
                     @ApiResponse(responseCode = "201", description = "User registered successfully",
                             content = @Content(schema = @Schema(implementation = UserResponse.class))),
-                    @ApiResponse(responseCode = "400", description = "Invalid input data")
+                    @ApiResponse(responseCode = "400", description = "Invalid input data",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody UserRequest user) {
@@ -69,7 +71,8 @@ public class UserController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Authentication successful",
                             content = @Content(schema = @Schema(implementation = JwtResponse.class))),
-                    @ApiResponse(responseCode = "401", description = "Invalid credentials")
+                    @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody AuthenticationRequest authenticationRequest) {
@@ -91,7 +94,8 @@ public class UserController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "User found",
                             content = @Content(schema = @Schema(implementation = UserResponse.class))),
-                    @ApiResponse(responseCode = "404", description = "User not found")
+                    @ApiResponse(responseCode = "404", description = "User not found",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<UserResponse> getUserByUsername(@PathVariable String username) {
@@ -113,7 +117,8 @@ public class UserController {
             description = "Associates a list of image IDs with the specified user's profile.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Images associated successfully"),
-                    @ApiResponse(responseCode = "404", description = "User not found")
+                    @ApiResponse(responseCode = "404", description = "User not found",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<String> associateImagesWithUser(@PathVariable String username, @RequestBody List<String> imageIds) {
