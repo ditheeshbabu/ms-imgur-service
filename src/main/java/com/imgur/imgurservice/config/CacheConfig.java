@@ -1,6 +1,5 @@
 package com.imgur.imgurservice.config;
 
-import com.imgur.imgurservice.model.ImageResponse;
 import com.imgur.imgurservice.model.UserResponse;
 import org.ehcache.config.CacheConfiguration;
 import org.ehcache.config.ResourcePools;
@@ -12,7 +11,6 @@ import org.ehcache.jsr107.EhcacheCachingProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.interceptor.SimpleKey;
 import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

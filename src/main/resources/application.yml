@@ -19,7 +19,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create #remove this for production
+      ddl-auto: update #remove this for production
     show-sql: true
 
   h2:
