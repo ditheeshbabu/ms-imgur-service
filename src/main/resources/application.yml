@@ -19,8 +19,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false
+      ddl-auto: create #remove this for production
+    show-sql: true
 
   h2:
     console:
