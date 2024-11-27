@@ -28,7 +28,7 @@ The **MS Imgur Service** is a Spring Boot API application designed for managing 
 ---
 ### Live instance: 
 
-- The service is accessible at https://5b962db1e37e.ngrok.app and the API details using swagger will be available at https://5b962db1e37e.ngrok.app/swagger-ui/index.html .
+- The service is accessible at https://www.ditheesh.online and the API details using swagger will be available at https://www.ditheesh.online/swagger-ui/index.html .
 - Update the URL in postman once the collection is imported to the above URL to test the live instance. The above swagger link can also be used to test the API.
 
 

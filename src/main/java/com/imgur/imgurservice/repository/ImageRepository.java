@@ -3,6 +3,8 @@ package com.imgur.imgurservice.repository;
 import com.imgur.imgurservice.entity.ImageEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -10,6 +12,7 @@ import java.util.List;
  * Repository interface for performing database operations on the Image entity.
  */
 @Repository
+@Transactional(isolation = Isolation.READ_COMMITTED)
 public interface ImageRepository extends JpaRepository<ImageEntity, String> {
 
     /**

@@ -83,7 +83,7 @@ metadata:
   labels:
     app: ms-imgur-service
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: ms-imgur-service
@@ -132,7 +132,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: ms-imgur-service
-  minReplicas: 3
+  minReplicas: 2
   maxReplicas: 12
   metrics:
     - type: Resource
