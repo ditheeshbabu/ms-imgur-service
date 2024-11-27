@@ -10,8 +10,6 @@ A Spring Boot API application for managing images, equipped with configurations 
 3. [Running Locally](#running-locally)
 4. [Running with Docker](#running-with-docker)
 5. [Deploying to Kubernetes](#deploying-to-kubernetes)
-6. [API Documentation](#api-documentation)
-7. [License](#license)
 
 ---
 
@@ -28,6 +26,11 @@ The **MS Imgur Service** is a Spring Boot API application designed for managing 
 - OpenAPI (Swagger) documentation and required Postman Collections are present in api-docs path.
 - Once application is running, you may also access http://localhost:9090/swagger-ui/index.html to find details of the API and to try out some requests.
 ---
+### Live instance: 
+
+- The service is accessible at https://5b962db1e37e.ngrok.app and the API details using swagger will be available at https://5b962db1e37e.ngrok.app/swagger-ui/index.html .
+- Update the URL in postman once the collection is imported to the above URL to test the live instance. The above swagger link can also be used to test the API.
+
 
 ## Getting Started
 
@@ -62,7 +65,7 @@ Run the application with:
 ./gradlew bootRun
 ```
 
-## Running in Docker
+## Running with Docker
 
 Follow these steps to run the application using Docker:
 
@@ -75,7 +78,7 @@ Build and run the application using docker-compose
   docker-compose up --build
 ```
 
-## Running with Kubernetes
+## Deploying to Kubernetes
 
 Follow these steps to run the application using Kubernetes for autoscaling:
 
