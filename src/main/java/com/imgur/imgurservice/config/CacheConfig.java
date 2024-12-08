@@ -1,73 +1,78 @@
-package com.imgur.imgurservice.config;
-
-import com.imgur.imgurservice.model.UserResponse;
-import org.ehcache.config.CacheConfiguration;
-import org.ehcache.config.ResourcePools;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.ExpiryPolicyBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.core.config.DefaultConfiguration;
-import org.ehcache.jsr107.EhcacheCachingProvider;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.jcache.JCacheCacheManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import javax.cache.Caching;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static java.util.Objects.nonNull;
-
-
-@Configuration
-@EnableCaching
-public class CacheConfig {
-
-    @Bean
-    public CacheManager cacheManager(CacheConfiguration<String, UserResponse> usersCacheConfig,
-                                     CacheConfiguration<String, List> imagesCacheConfig) {
-        EhcacheCachingProvider provider = getCachingProvider();
-        Map<String, CacheConfiguration<?,?>> caches = new HashMap<>();
-
-        caches.put("users", usersCacheConfig);
-        caches.put("imagesByUser", imagesCacheConfig);
-
-        DefaultConfiguration configuration = new DefaultConfiguration(caches, this.getClass().getClassLoader());
-        return new JCacheCacheManager(provider.getCacheManager(provider.getDefaultURI(), configuration));
-
-    }
-
-    @Bean
-    public CacheConfiguration<String, UserResponse> usersCacheConfig(@Value("${cache.user.size}") int size, @Value("${cache.user.ttl}") long timeToLive){
-        return buildConfiguration(String.class, UserResponse.class, size, timeToLive, null);
-    }
-
-
-    @Bean
-    public CacheConfiguration<String, List> imagesCacheConfig(@Value("${cache.image.size}") int size, @Value("${cache.image.ttl}") long timeToLive){
-        return buildConfiguration(String.class, List.class, size, timeToLive, null);
-    }
-
-    protected <K extends Object, V extends Object> CacheConfiguration<K,V> buildConfiguration(Class<K> key, Class<V> value, int heapSize, Long timeToLive, Long timeToIdle){
-        ResourcePools pools = ResourcePoolsBuilder.heap(heapSize).build();
-        CacheConfigurationBuilder<K, V> configBuilder = CacheConfigurationBuilder.newCacheConfigurationBuilder(key, value, pools);
-
-        if (nonNull(timeToLive)){
-            configBuilder = configBuilder.withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofMillis(timeToLive)));
-        } else if (nonNull(timeToIdle)) {
-            configBuilder = configBuilder.withExpiry(ExpiryPolicyBuilder.timeToIdleExpiration(Duration.ofMillis(timeToIdle)));
-        }
-
-        return configBuilder.build();
-    }
-
-    private EhcacheCachingProvider getCachingProvider(){
-        return (EhcacheCachingProvider) Caching.getCachingProvider();
-    }
-}
-
+//package com.imgur.imgurservice.config;
+//
+//import com.imgur.imgurservice.model.UserResponse;
+//import lombok.extern.slf4j.Slf4j;
+//import org.springframework.beans.factory.annotation.Value;
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.context.annotation.Primary;
+//import org.springframework.data.redis.cache.RedisCacheConfiguration;
+//import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+//import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+//import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+//import org.springframework.data.redis.core.RedisTemplate;
+//import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+//import org.springframework.data.redis.serializer.RedisSerializationContext;
+//import org.springframework.data.redis.serializer.StringRedisSerializer;
+//import selogger.net.bytebuddy.description.type.TypeList;
+//
+//import java.awt.*;
+//import java.time.Duration;
+//import java.util.List;
+//
+//@Slf4j
+//@Configuration
+//public class CacheConfig {
+//
+//    @Value("${imgur.redis.host}")
+//    String redisCacheHostName;
+//
+//    @Value("${imgur.redis.auth-token}")
+//    String redisCacheAuthToken;
+//
+//    @Bean
+//    public RedisCacheConfiguration cacheConfiguration(){
+//        log.info("establishing cache configuration...");
+//        return RedisCacheConfiguration.defaultCacheConfig()
+//                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+//    }
+//
+//    @Primary
+//    @Bean
+//    public LettuceConnectionFactory redisConnectionFacatory(){
+//        log.info("establishing redis Connection Factaory....");
+//        Duration shutdownTimeout = Duration.ofSeconds(1);
+//
+//        RedisStandaloneConfiguration clusterConfiguration = new RedisStandaloneConfiguration();
+//        clusterConfiguration.setHostName(redisCacheHostName);
+//        clusterConfiguration.setPassword(redisCacheAuthToken);
+//
+//        LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder().useSsl().and().shutdownTimeout(shutdownTimeout).build();
+//        log.info("redis connection factory establishment complete");
+//
+//        return new LettuceConnectionFactory(clusterConfiguration, lettuceClientConfiguration);
+//    }
+//
+//    @Bean
+//    public RedisTemplate<String, List> redisTemplate(){
+//
+//        log.info("creating redis template");
+//        final RedisTemplate<String, List> redisTemplate = new RedisTemplate<>();
+//        redisTemplate.setConnectionFactory(redisConnectionFacatory());
+//        log.info("redis template creation complete");
+//        return redisTemplate;
+//    }
+//
+//    @Bean
+//    public RedisTemplate<String, UserResponse> redisUserTemplate(){
+//        log.info("creating UserResponse redis template");
+//        final RedisTemplate<String, UserResponse> redisUserTemplate = new RedisTemplate<>();
+//        redisUserTemplate.setConnectionFactory(redisConnectionFacatory());
+//        redisUserTemplate.setKeySerializer(new StringRedisSerializer());
+//        redisUserTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+//
+//        log.info("redis UserResponse template creation complete");
+//        return redisUserTemplate;
+//    }
+//
+//}

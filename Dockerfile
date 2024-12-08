@@ -7,8 +7,11 @@ WORKDIR /app
 # Copy the JAR file from the host to the container
 COPY build/libs/ms-imgur-service-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose the application port
-EXPOSE 9090
+# Expose application and Redis ports
+EXPOSE 9090 6379
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Install Redis in the container
+RUN apt-get update && apt-get install -y redis && apt-get clean
+
+# Run Redis in the background and start the Spring Boot application
+ENTRYPOINT ["sh", "-c", "redis-server --daemonize yes && java -jar app.jar"]

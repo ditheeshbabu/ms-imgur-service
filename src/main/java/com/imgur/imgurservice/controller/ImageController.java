@@ -48,14 +48,14 @@ public class ImageController {
             description = "Uploads an image and associates it with the authenticated user.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Image uploaded successfully",
-                            content = @Content(schema = @Schema(implementation = ImageResponse.class))),
+                            content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "400", description = "Invalid file or token",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "500", description = "Internal server error",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
-    public ResponseEntity<ImageResponse> uploadImage(
+    public ResponseEntity<String> uploadImage(
             @RequestParam("file") MultipartFile file,
             @RequestHeader("Authorization") String accessToken) {
         String username = getUsernameFromToken(accessToken);
@@ -69,7 +69,7 @@ public class ImageController {
         ImageResponse imageResponse = imgService.uploadAndSaveImage(file, username);
         log.info("Image uploaded successfully for user: {}", username);
 
-        return ResponseEntity.created(null).body(imageResponse);
+        return ResponseEntity.created(null).body("Image upload is in progress and will be completed shortly.");
     }
 
     /**

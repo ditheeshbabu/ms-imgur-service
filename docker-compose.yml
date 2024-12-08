@@ -1,6 +1,12 @@
 version: '3.8'
 
 services:
+  redis-server:
+    image: redis:6.2
+    container_name: redis-server
+    ports:
+      - "6379:6379"  # Redis port
+
   h2-server:
     image: ditheesh/h2:latest
     container_name: h2-server
@@ -24,8 +30,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:h2:tcp://h2-server:9092/~/imgurData;AUTO_SERVER=TRUE
       SPRING_DATASOURCE_USERNAME: sa
       SPRING_DATASOURCE_PASSWORD: password
+      SPRING_REDIS_HOST: redis-server
+      SPRING_REDIS_PORT: 6379
     depends_on:
       - h2-server
+      - redis-server
 
 volumes:
   h2-data:
