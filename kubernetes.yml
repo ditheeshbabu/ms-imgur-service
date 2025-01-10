@@ -1,4 +1,4 @@
-# PersistentVolume
+# PersistentVolume for H2 Database
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -7,18 +7,18 @@ spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteOnce  # Ensure correct access mode
+    - ReadWriteOnce
   hostPath:
-    path: /data/h2  # Local path on the host to store the database file
+    path: /data/h2
 ---
-# PersistentVolumeClaim
+# PersistentVolumeClaim for H2 Database
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: h2-pvc
 spec:
   accessModes:
-    - ReadWriteOnce  # Ensure it matches the PV's access mode
+    - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
@@ -44,11 +44,11 @@ spec:
         - name: h2-server
           image: ditheesh/h2:latest
           ports:
-            - containerPort: 9092  # H2 TCP Port
-            - containerPort: 8082  # H2 Web Console Port
+            - containerPort: 9092
+            - containerPort: 8082
           volumeMounts:
             - name: h2-data
-              mountPath: /data  # Mount the PVC inside the container
+              mountPath: /data
           env:
             - name: H2_OPTIONS
               value: "-tcp -tcpAllowOthers -web -webAllowOthers"
@@ -74,6 +74,78 @@ spec:
       protocol: TCP
       port: 8082
       targetPort: 8082
+---
+# Redis Headless Service for Cluster Communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless
+spec:
+  clusterIP: None
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+---
+# Redis StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+  labels:
+    app: redis
+spec:
+  serviceName: redis-headless
+  replicas: 3 # Number of Redis nodes
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:6.2
+          ports:
+            - containerPort: 6379
+          command:
+            - "redis-server"
+            - "--cluster-enabled"
+            - "yes"
+            - "--cluster-config-file"
+            - "/data/nodes.conf"
+            - "--cluster-node-timeout"
+            - "5000"
+            - "--appendonly"
+            - "yes"
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  selector:
+    app: redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
 ---
 # Spring Boot Deployment
 apiVersion: apps/v1
@@ -107,6 +179,10 @@ spec:
               value: sa
             - name: SPRING_DATASOURCE_PASSWORD
               value: password
+            - name: SPRING_REDIS_HOST
+              value: redis-service
+            - name: SPRING_REDIS_PORT
+              value: "6379"
 ---
 # Spring Boot Service
 apiVersion: v1
@@ -122,7 +198,7 @@ spec:
       targetPort: 9090
   type: LoadBalancer
 ---
-# HorizontalPodAutoscaler
+# HorizontalPodAutoscaler for Spring Boot App
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

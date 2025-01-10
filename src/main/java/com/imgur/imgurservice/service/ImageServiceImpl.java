@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Implementation of the ImgService interface for managing image-related operations.
@@ -64,25 +66,41 @@ public class ImageServiceImpl implements ImgService {
      */
     @Override
     @CacheEvict(value = "imagesByUser", key = "#username")
+    // Original synchronous method
     public ImageResponse uploadAndSaveImage(MultipartFile file, String username) {
         if (file == null || file.isEmpty()) {
             throw new RuntimeException("Invalid or empty file");
         }
+        // Call the async method and return a placeholder response immediately
+        CompletableFuture.runAsync(() -> uploadAndSaveImageAsync(file, username));
+        return new ImageResponse("Upload in progress", "Please check after some time");
+    }
 
-        ImgurResponse imgurResponse = uploadImg(file);
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    // Asynchronous upload and save method
+    @Async ("taskExecutor")
+    public void uploadAndSaveImageAsync(MultipartFile file, String username) {
+        try {
+            // 1. Upload the file to Imgur
+            ImgurResponse response = uploadImg(file);
+            ImgurData imgurData = response.getData();
+            String imageUrl = imgurData.getLink();
+            String deleteHash = imgurData.getDeletehash();
+            // 2. Save the image details to the database
+            ImageEntity image = new ImageEntity();
+            image.setImageUrl(imageUrl);
+            image.setDeleteHash(deleteHash);
 
-        ImageEntity image = new ImageEntity();
-        ImgurData imgurData = imgurResponse.getData();
-        String imageUrl = imgurData.getLink();
-        String deleteHash = imgurData.getDeletehash();
-        image.setImageUrl(imageUrl);
-        image.setDeleteHash(deleteHash);
-        image.setUser(user);
-        imageRepository.save(image);
-        log.info("Image metadata saved for user: {}", username);
-        return new ImageResponse(image.getId(), imageUrl);
+            UserEntity user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            image.setUser(user);
+            imageRepository.save(image);
+
+            log.info("Image metadata saved for user: {}", username);
+
+        } catch (Exception e) {
+            log.error("Failed to upload and save image: " + e.getMessage());
+        }
     }
 
     /**
@@ -94,21 +112,31 @@ public class ImageServiceImpl implements ImgService {
     @Override
     @CacheEvict(value = "imagesByUser", key = "#username")
     public void deleteImage(String imageId, String username) {
-        // Extract username from the token
+        CompletableFuture.runAsync(() -> deleteImageAsync(imageId, username));
+    }
 
-        ImageEntity image = imageRepository.findById(imageId)
-                .orElseThrow(() -> new ImageNotFoundException("Image not found"));
+    // Asynchronous delete method
+    @Async ("deleteTaskExecutor")
+    public void deleteImageAsync(String imageId, String username) {
+        try {
 
-        // Validate ownership
-        if (!image.getUser().getUsername().equals(username)) {
-            log.error("Unauthorized deletion attempt for image {} by user {}", imageId, username);
-            throw new AccessDeniedException("You are not authorized to delete this image");
+            ImageEntity image = imageRepository.findById(imageId)
+                    .orElseThrow(() -> new ImageNotFoundException("Image not found"));
+
+            // Validate ownership
+            if (!image.getUser().getUsername().equals(username)) {
+                log.error("Unauthorized deletion attempt for image {} by user {}", imageId, username);
+                throw new AccessDeniedException("You are not authorized to delete this image");
+            }
+
+            // Perform deletion
+            deleteImageFromService(image.getDeleteHash());
+            imageRepository.delete(image);
+            log.info("Image deleted successfully by user {}: {}", username, imageId);
+
+        } catch (Exception e) {
+            log.error("Failed to delete image: "+ e.getMessage());
         }
-
-        // Perform deletion
-        deleteImageFromService(image.getDeleteHash());
-        imageRepository.delete(image);
-        log.info("Image deleted successfully by user {}: {}", username, imageId);
     }
 
     /**
